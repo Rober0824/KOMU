@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KOMU</title>
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#123D30">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap');
+
+  :root{
+    --pine:#123D30; --pine2:#1F5C4A; --pine-tint:#E3EEE7;
+    --cream:#F6F4EE; --ink:#1B241E; --ink-faint:#5B655D; --ink-fainter:#8A9189;
+    --sun:#E1912F; --coral:#C1524B; --coral-tint:#F6E2E0; --line:#E3DED2;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:'Work Sans',system-ui,sans-serif; background:var(--cream); color:var(--ink); -webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Fraunces',ui-serif,Georgia,serif; margin:0;}
+  a{color:inherit; text-decoration:none;}
+  input,select,button,textarea{font-family:inherit; font-size:15px;}
+  input::placeholder{color:var(--ink-fainter);}
+  button{cursor:pointer;}
+
+  #app{max-width:460px; margin:0 auto; min-height:100vh; background:var(--cream); position:relative; display:flex; flex-direction:column;}
+  .view{display:none; flex:1; flex-direction:column;}
+  .view.active{display:flex;}
+
+  .screen{flex:1; overflow-y:auto; padding:18px 20px 100px;}
+  .center-screen{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px 26px;}
+
+  .btn{width:100%; border:none; border-radius:100px; padding:14px; font-size:15px; font-weight:700; font-family:'Work Sans',sans-serif; cursor:pointer;}
+  .btn-primary{background:var(--sun); color:var(--pine);}
+  .btn-dark{background:var(--pine); color:#fff;}
+  .btn-secondary{background:#fff; color:var(--ink); border:1.5px solid var(--line);}
+  .btn:disabled{opacity:0.5; cursor:default;}
+  .btn-sm{width:auto; padding:8px 16px; font-size:13px;}
+
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:12.5px; font-weight:600; color:var(--ink-faint); margin-bottom:6px;}
+  .field input, .field select{width:100%; border:1.5px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; color:var(--ink); outline:none;}
+  .field input:focus, .field select:focus{border-color:var(--pine2);}
+
+  .card{background:#fff; border:1px solid var(--line); border-radius:16px; padding:16px;}
+  .chip{display:inline-flex; align-items:center; gap:6px; background:var(--pine-tint); color:var(--pine); border-radius:100px; padding:6px 12px; font-size:12.5px; font-weight:600;}
+  .error-box{background:var(--coral-tint); color:var(--coral); border-radius:12px; padding:12px 14px; font-size:13px; margin-bottom:14px;}
+  .empty-state{text-align:center; padding:40px 20px; color:var(--ink-faint);}
+  .empty-state .glyph{font-size:32px; display:block; margin-bottom:10px;}
+
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:16px 20px 4px;}
+  .brand{display:flex; align-items:center; gap:8px;}
+  .brand img{width:28px; height:28px; border-radius:8px;}
+  .brand span{font-family:'Fraunces',serif; font-weight:700; font-size:18px; color:var(--pine);}
+  .back-circle{width:34px; height:34px; border-radius:50%; background:#fff; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .page-header{display:flex; align-items:center; gap:12px; padding:16px 20px 10px;}
+  .page-header h1{font-size:18px;}
+  .page-header .sub{font-size:12px; color:var(--ink-faint);}
+
+  .avatar{border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-family:'Fraunces',serif; flex-shrink:0;}
+
+  .bottomnav{position:sticky; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-around; padding:8px 4px calc(12px + env(safe-area-inset-bottom));}
+  .navitem{display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--ink-fainter); font-size:10.5px; font-weight:500; background:none; border:none; padding:4px 8px;}
+  .navitem.active{color:var(--pine); font-weight:700;}
+  .navitem .fab{width:50px; height:50px; border-radius:50%; background:var(--sun); display:flex; align-items:center; justify-content:center; margin-top:-24px; box-shadow:0 6px 14px rgba(225,145,47,0.4);}
+
+  .role-toggle{display:flex; gap:10px; margin-bottom:20px;}
+  .role-opt{flex:1; border:1.5px solid var(--line); background:#fff; border-radius:16px; padding:16px 10px; text-align:center; cursor:pointer;}
+  .role-opt .ic{font-size:24px; margin-bottom:6px; opacity:0.55;}
+  .role-opt .lbl{font-size:13px; font-weight:600; color:var(--ink-faint);}
+  .role-opt.selected{background:var(--pine); border-color:var(--pine); box-shadow:0 6px 16px rgba(18,61,48,0.22);}
+  .role-opt.selected .ic{opacity:1;}
+  .role-opt.selected .lbl{color:#fff; font-weight:700;}
+
+  .daychip-row{display:flex; gap:8px;}
+  .daychip{flex:1; text-align:center; border-radius:10px; padding:9px 0; font-size:12.5px; font-weight:600; background:#fff; border:1.5px solid var(--line); color:var(--ink-fainter); cursor:pointer;}
+  .daychip.selected{background:var(--pine); border-color:var(--pine); color:#fff; font-weight:700;}
+
+  .match-card{background:#fff; border:1px solid var(--line); border-radius:16px; padding:14px 16px; margin-bottom:12px;}
+  .match-top{display:flex; align-items:center; gap:12px; margin-bottom:10px;}
+  .compat-badge{text-align:center;}
+  .compat-num{font-family:'Fraunces',serif; font-weight:700; font-size:19px; color:var(--pine);}
+  .compat-label{font-size:10px; color:var(--ink-fainter);}
+  .match-progress{height:5px; background:var(--line); border-radius:100px; margin-bottom:10px; overflow:hidden;}
+  .match-progress span{display:block; height:100%; background:var(--sun);}
+  .match-meta{font-size:12.5px; color:var(--ink-faint); display:flex; flex-direction:column; gap:4px; margin-bottom:10px;}
+
+  .chatbox{flex:1; display:flex; flex-direction:column; padding:16px 20px 12px; overflow-y:auto; gap:10px;}
+  .bubble{max-width:78%; padding:10px 13px; border-radius:16px; font-size:14px; line-height:1.4;}
+  .bubble.me{align-self:flex-end; background:var(--pine); color:#fff; border-bottom-right-radius:4px;}
+  .bubble.them{align-self:flex-start; background:#fff; border:1px solid var(--line); border-bottom-left-radius:4px;}
+  .chat-input-row{display:flex; gap:8px; padding:10px 16px calc(10px + env(safe-area-inset-bottom)); background:#fff; border-top:1px solid var(--line);}
+  .chat-input-row input{flex:1; border:1.5px solid var(--line); border-radius:100px; padding:11px 16px; outline:none;}
+  .chat-input-row button{width:42px; height:42px; border-radius:50%; background:var(--pine); color:#fff; border:none; flex-shrink:0;}
+
+  .stepper{display:flex; align-items:center; gap:16px;}
+  .stepper button{width:30px; height:30px; border-radius:50%; border:1.5px solid var(--line); background:#fff; color:var(--ink-faint); font-size:16px; display:flex; align-items:center; justify-content:center;}
+  .stepper strong{font-size:15px; font-family:'Fraunces',serif; min-width:16px; text-align:center;}
+
+  .link-btn{background:none; border:none; color:var(--pine); font-weight:600; font-size:13px; padding:0; cursor:pointer;}
+  .muted{color:var(--ink-faint); font-size:13px; line-height:1.5;}
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ LOADING ============ -->
+  <div class="view active" id="view-loading">
+    <div class="center-screen">
+      <div style="font-family:'Fraunces',serif; font-weight:700; font-size:22px; color:var(--pine);">KOMU</div>
+      <p class="muted" style="margin-top:8px;">Cargando…</p>
+    </div>
+  </div>
+
+  <!-- ============ AUTH (login / signup) ============ -->
+  <div class="view" id="view-auth">
+    <div class="screen">
+      <div style="display:flex; flex-direction:column; align-items:center; padding-top:40px; margin-bottom:28px;">
+        <img src="icon-192.png" style="width:56px; height:56px; border-radius:16px; margin-bottom:14px;">
+        <h1 style="font-size:24px;">KOMU</h1>
+        <p class="muted" style="margin-top:6px;">Comparte trayectos con tu comunidad</p>
+      </div>
+
+      <div id="auth-error" class="error-box hidden"></div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="auth-email" autocomplete="email" placeholder="tú@email.com">
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="auth-password" autocomplete="current-password" placeholder="••••••••">
+      </div>
+
+      <button class="btn btn-dark" id="auth-submit-btn" style="margin-bottom:12px;">Entrar</button>
+      <p style="text-align:center; font-size:13px; color:var(--ink-faint);">
+        <span id="auth-toggle-text">¿No tienes cuenta?</span>
+        <button class="link-btn" id="auth-toggle-btn">Crear cuenta</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- ============ CONFIRMA TU EMAIL ============ -->
+  <div class="view" id="view-confirm-email">
+    <div class="center-screen">
+      <div style="font-size:38px; margin-bottom:14px;">📩</div>
+      <h2 style="font-size:19px; margin-bottom:10px;">Revisa tu correo</h2>
+      <p class="muted">Te hemos enviado un enlace de confirmación. Ábrelo y vuelve aquí para entrar.</p>
+      <button class="btn btn-secondary" style="margin-top:24px; max-width:200px;" id="confirm-email-back-btn">Volver</button>
+    </div>
+  </div>
+
+  <!-- ============ ONBOARDING: nombre + código ============ -->
+  <div class="view" id="view-onboarding">
+    <div class="screen" style="text-align:center; padding-top:50px;">
+      <img src="icon-192.png" style="width:60px; height:60px; border-radius:14px; margin-bottom:18px;">
+      <h1 style="font-size:22px; margin-bottom:10px;">Únete a tu comunidad</h1>
+      <p class="muted" style="max-width:300px; margin:0 auto 26px;">Pide el código de invitación a tu urbanización, tu empresa o tu colegio, y escríbelo aquí.</p>
+
+      <div id="onboarding-error" class="error-box hidden" style="text-align:left;"></div>
+
+      <div class="field" style="text-align:left;">
+        <label>Tu nombre</label>
+        <input type="text" id="onb-name" placeholder="Nombre y apellido">
+      </div>
+      <div class="field" style="text-align:left;">
+        <label>Código de invitación</label>
+        <input type="text" id="onb-code" placeholder="ABC-123" style="text-align:center; font-family:'Fraunces',serif; font-size:20px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;">
+      </div>
+
+      <button class="btn btn-dark" id="onb-submit-btn" style="margin-top:6px;">Unirme</button>
+      <p class="muted" style="margin-top:20px; font-size:12px;">Cada comunidad tiene su propio código — así solo entra quien de verdad pertenece a ella.</p>
+      <button class="link-btn" style="margin-top:18px;" id="onb-logout-btn">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <!-- ============ HOME (comunidad) ============ -->
+  <div class="view" id="view-home">
+    <div class="topbar">
+      <div class="brand"><img src="icon-192.png"><span>KOMU</span></div>
+      <div id="home-avatar"></div>
+    </div>
+    <div class="screen" style="padding-top:6px;">
+      <div style="display:flex; flex-direction:column; align-items:center; text-align:center; padding:10px 0 22px;">
+        <div id="home-community-icon" style="width:60px; height:60px; border-radius:16px; background:var(--pine-tint); display:flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:12px;">🏘️</div>
+        <h1 id="home-community-name" style="font-size:19px; margin-bottom:4px;">—</h1>
+        <div id="home-community-count" class="muted" style="font-size:13px;"></div>
+      </div>
+
+      <div style="background:var(--pine); border-radius:22px; padding:22px 20px; margin-bottom:20px; box-shadow:0 8px 24px rgba(18,61,48,0.25); text-align:center;">
+        <div style="font-size:26px; margin-bottom:8px;">🚗🙋</div>
+        <h2 style="font-size:18px; color:#fff; margin-bottom:8px;">Mete tu trayecto</h2>
+        <p style="font-size:13px; color:#CFE0D8; line-height:1.5; margin:0 0 16px;">Dinos de dónde a dónde vas, y si llevas coche o buscas que te lleven.</p>
+        <button class="btn btn-primary" id="home-empezar-btn">Empezar</button>
+      </div>
+
+      <div style="font-family:'Fraunces',serif; font-weight:600; font-size:14.5px; margin-bottom:10px;">Mis coincidencias</div>
+      <div class="card" id="home-matches-summary" style="display:flex; align-items:center; gap:12px; cursor:pointer; margin-bottom:16px;">
+        <div style="font-size:22px;">🤝</div>
+        <div style="flex:1;">
+          <div style="font-weight:700; font-size:14px;" id="home-matches-title">Ver mis coincidencias</div>
+          <div class="muted" id="home-matches-sub" style="font-size:12.5px;">—</div>
+        </div>
+      </div>
+
+      <div style="font-family:'Fraunces',serif; font-weight:600; font-size:14.5px; margin-bottom:10px;">Mis trayectos</div>
+      <div id="home-my-trips"></div>
+    </div>
+  </div>
+
+  <!-- ============ PUBLICAR (coche o pasajero, en uno) ============ -->
+  <div class="view" id="view-publish">
+    <div class="page-header">
+      <button class="back-circle" data-nav="home">←</button>
+      <div><h1>Tu trayecto</h1><div class="sub" id="publish-community-sub"></div></div>
+    </div>
+    <div class="screen">
+      <div id="publish-error" class="error-box hidden"></div>
+
+      <div style="font-family:'Fraunces',serif; font-weight:600; font-size:14px; margin-bottom:10px;">¿Cómo haces este trayecto?</div>
+      <div class="role-toggle">
+        <div class="role-opt selected" id="role-driver" data-role="driver">
+          <div class="ic">🚗</div><div class="lbl">Llevo coche</div>
+        </div>
+        <div class="role-opt" id="role-passenger" data-role="passenger">
+          <div class="ic">🙋</div><div class="lbl">Busco que me lleven</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Origen</label>
+        <input list="places-list" id="pub-origin" placeholder="¿Desde dónde sales?">
+      </div>
+      <div class="field">
+        <label>Destino</label>
+        <input list="places-list" id="pub-dest" placeholder="¿A dónde vas?">
+      </div>
+      <datalist id="places-list"></datalist>
+
+      <div class="field">
+        <label>Hora de salida</label>
+        <input type="time" id="pub-time" value="08:00">
+      </div>
+
+      <div class="field">
+        <label>Días</label>
+        <div class="daychip-row" id="pub-days">
+          <div class="daychip selected" data-day="L">L</div>
+          <div class="daychip selected" data-day="M">M</div>
+          <div class="daychip selected" data-day="X">X</div>
+          <div class="daychip selected" data-day="J">J</div>
+          <div class="daychip selected" data-day="V">V</div>
+          <div class="daychip" data-day="S">S</div>
+          <div class="daychip" data-day="D">D</div>
+        </div>
+      </div>
+
+      <div class="field" id="pub-seats-field">
+        <label>Plazas libres</label>
+        <div class="stepper">
+          <button type="button" id="pub-seats-minus">−</button>
+          <strong id="pub-seats-val">3</strong>
+          <button type="button" id="pub-seats-plus">+</button>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="pub-submit-btn" style="margin-top:6px;">Publicar y ver coincidencias</button>
+    </div>
+  </div>
+
+  <!-- ============ COINCIDENCIAS ============ -->
+  <div class="view" id="view-matches">
+    <div class="page-header">
+      <button class="back-circle" data-nav="home">←</button>
+      <div><h1>Coincidencias</h1></div>
+    </div>
+    <div class="screen" id="matches-list"></div>
+  </div>
+
+  <!-- ============ CHAT ============ -->
+  <div class="view" id="view-chat">
+    <div class="page-header">
+      <button class="back-circle" data-nav="matches">←</button>
+      <div id="chat-header-info"></div>
+    </div>
+    <div class="chatbox" id="chat-messages"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="Escribe un mensaje…">
+      <button id="chat-send-btn">➤</button>
+    </div>
+  </div>
+
+  <!-- ============ MIS TRAYECTOS ============ -->
+  <div class="view" id="view-trips">
+    <div class="page-header"><div><h1>Mis trayectos</h1></div></div>
+    <div class="screen" id="trips-list"></div>
+  </div>
+
+  <!-- ============ PERFIL ============ -->
+  <div class="view" id="view-profile">
+    <div class="page-header"><div><h1>Perfil</h1></div></div>
+    <div class="screen" id="profile-content"></div>
+  </div>
+
+  <!-- ============ BOTTOM NAV (solo en pantallas principales) ============ -->
+  <div class="bottomnav hidden" id="bottomnav">
+    <button class="navitem" data-nav="home"><span>🏠</span><span>Inicio</span></button>
+    <button class="navitem" data-nav="matches"><span>🤝</span><span>Match</span></button>
+    <button class="navitem" data-nav="publish"><span class="fab">➕</span></button>
+    <button class="navitem" data-nav="trips"><span>🚗</span><span>Viajes</span></button>
+    <button class="navitem" data-nav="profile"><span>👤</span><span>Perfil</span></button>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ============================================================================
+// KOMU — app de carpooling por comunidades cerradas (código de invitación).
+// Un solo archivo (HTML + este script), sin build, como Box Score / Biciconamigos.
+// Backend: Supabase (proyecto compartido, esquema "comunidad").
+// ============================================================================
+
+const SUPABASE_URL = 'https://amgmlsdbllknvwuixozc.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtZ21sc2RibGxrbnZ3dWl4b3pjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNjI0MzMsImV4cCI6MjEwNDczODQzM30._ddwOdRLoQR4xSoskQ26znaZjDSJo0677BdbbAOFdI4';
+
+// Un único cliente: db.schema afecta solo a las llamadas .from(...) (REST),
+// nunca a sb.auth.* (que siempre habla con el esquema interno "auth" de
+// Supabase sin importar esta opción).
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  db: { schema: 'comunidad' },
+});
+
+// ---------------------------------------------------------------------------
+// Geografía / matching — misma lógica que la app original (src/lib/geo.ts y
+// src/lib/match.ts), portada aquí en JS plano.
+// ---------------------------------------------------------------------------
+const PLACES = {
+  losolivos: { key: 'losolivos', name: 'Residencial Los Olivos', short: 'Los Olivos', lat: 40.543, lng: -3.63 },
+  madrid: { key: 'madrid', name: 'Madrid (Centro)', short: 'Madrid', lat: 40.4168, lng: -3.7038 },
+  nuevosmin: { key: 'nuevosmin', name: 'Nuevos Ministerios, Madrid', short: 'N. Ministerios', lat: 40.446, lng: -3.6923 },
+  chamartin: { key: 'chamartin', name: 'Chamartín, Madrid', short: 'Chamartín', lat: 40.4725, lng: -3.6825 },
+  alcobendas: { key: 'alcobendas', name: 'Alcobendas', short: 'Alcobendas', lat: 40.5379, lng: -3.6353 },
+  ssreyes: { key: 'ssreyes', name: 'San Sebastián de los Reyes', short: 'S.S. Reyes', lat: 40.548, lng: -3.626 },
+  elgoloso: { key: 'elgoloso', name: 'El Goloso', short: 'El Goloso', lat: 40.5236, lng: -3.6987 },
+  trescantos: { key: 'trescantos', name: 'Tres Cantos', short: 'Tres Cantos', lat: 40.6006, lng: -3.7086 },
+  colegiosj: { key: 'colegiosj', name: 'Colegio San José', short: 'Colegio S. José', lat: 40.5405, lng: -3.6412 },
+  teseo110: { key: 'teseo110', name: 'Calle Teseo, 110, Madrid', short: 'Teseo 110', lat: 40.4456, lng: -3.6369 },
+  rsi: { key: 'rsi', name: 'RSI, Av. de la Industria 23, Tres Cantos', short: 'RSI', lat: 40.6056, lng: -3.698 },
+};
+
+function resolvePlaceKey(text) {
+  if (!text) return null;
+  const norm = text.trim().toLowerCase();
+  for (const key of Object.keys(PLACES)) {
+    const p = PLACES[key];
+    if (p.name.toLowerCase() === norm || p.short.toLowerCase() === norm || key === norm) return key;
+  }
+  for (const key of Object.keys(PLACES)) {
+    const p = PLACES[key];
+    if (p.name.toLowerCase().includes(norm) || norm.includes(p.short.toLowerCase())) return key;
+  }
+  return null;
+}
+
+function haversineKm(a, b) {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+}
+function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+function timeToMinutes(t) { const [h, m] = String(t).slice(0, 5).split(':').map(Number); return h * 60 + m; }
+function dayOverlapScore(passengerDays, driverDays) {
+  if (!passengerDays || !passengerDays.length || !driverDays || !driverDays.length) return 50;
+  const inter = passengerDays.filter((d) => driverDays.includes(d));
+  return Math.round((inter.length / passengerDays.length) * 100);
+}
+const MATCH_WEIGHTS = { origin: 0.2, destination: 0.25, time: 0.2, route: 0.15, recurrence: 0.1, community: 0.1 };
+const MIN_MATCH_SCORE = 50;
+
+// calculateMatch(passengerTrip, driverTrip) -> mismo cálculo que la app original.
+function calculateMatch(passengerTrip, driverTrip) {
+  const originKm = haversineKm(passengerTrip.origin, driverTrip.origin);
+  const destKm = haversineKm(passengerTrip.destination, driverTrip.destination);
+  const originScore = clamp(100 - originKm * 22, 0, 100);
+  const destinationScore = clamp(100 - destKm * 7, 0, 100);
+  const timeDiffMin = Math.abs(timeToMinutes(passengerTrip.time) - timeToMinutes(driverTrip.time));
+  const timeScore = clamp(100 - timeDiffMin * 1.3, 0, 100);
+  const routeScore = clamp((originScore + destinationScore) / 2, 0, 100);
+  const recurrenceScore = dayOverlapScore(passengerTrip.days, driverTrip.days);
+  const communityScore = passengerTrip.communityId === driverTrip.communityId ? 100 : 40;
+  const w = MATCH_WEIGHTS;
+  const score = Math.round(
+    originScore * w.origin + destinationScore * w.destination + timeScore * w.time +
+    routeScore * w.route + recurrenceScore * w.recurrence + communityScore * w.community
+  );
+  const detourMinutes = Math.max(0, Math.round((originKm / 28) * 60));
+  return { score, detourMinutes, timeDiffMin };
+}
+function matchLabel(score) {
+  if (score >= 90) return 'Excelente coincidencia';
+  if (score >= 75) return 'Muy buena coincidencia';
+  if (score >= 55) return 'Coincidencia posible';
+  return 'Coincidencia baja';
+}
+
+// ---------------------------------------------------------------------------
+// Estado global + navegación entre vistas
+// ---------------------------------------------------------------------------
+const state = {
+  user: null,       // sesión de auth (auth.users)
+  profile: null,    // fila de comunidad.profiles
+  community: null,  // fila de comunidad.communities
+  authMode: 'signin', // 'signin' | 'signup'
+  publishRole: 'driver',
+  publishDays: ['L', 'M', 'X', 'J', 'V'],
+  publishSeats: 3,
+  activeChatMatch: null,
+  chatChannel: null,
+};
+
+const MAIN_VIEWS = ['home', 'matches', 'trips', 'profile']; // vistas con bottom nav visible
+
+function showV(name) {
+  document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
+  const el = document.getElementById('view-' + name);
+  if (el) el.classList.add('active');
+  const nav = document.getElementById('bottomnav');
+  if (MAIN_VIEWS.includes(name)) {
+    nav.classList.remove('hidden');
+    document.querySelectorAll('.navitem').forEach((b) => b.classList.toggle('active', b.dataset.nav === name));
+  } else {
+    nav.classList.add('hidden');
+  }
+  if (name === 'home') renderHome();
+  if (name === 'matches') renderMatches();
+  if (name === 'trips') renderTrips();
+  if (name === 'profile') renderProfile();
+  if (name === 'publish') renderPublishForm();
+}
+
+document.querySelectorAll('[data-nav]').forEach((btn) => {
+  btn.addEventListener('click', () => showV(btn.dataset.nav));
+});
+
+function initials(name) {
+  return (name || '?').split(' ').filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || '?';
+}
+function avatarHtml(name, color, size) {
+  size = size || 40;
+  const fs = Math.round(size * 0.4);
+  return `<div class="avatar" style="width:${size}px;height:${size}px;background:${color || '#1F5C4A'};font-size:${fs}px;">${initials(name)}</div>`;
+}
+function showError(elId, message) {
+  const el = document.getElementById(elId);
+  if (!message) { el.classList.add('hidden'); el.textContent = ''; return; }
+  el.textContent = message;
+  el.classList.remove('hidden');
+}
+function traducirError(err) {
+  const msg = (err && err.message) || String(err || '');
+  if (/already registered|already been registered/i.test(msg)) return 'Ese email ya tiene una cuenta. Prueba a entrar en vez de crear una nueva.';
+  if (/invalid login credentials/i.test(msg)) return 'Email o contraseña incorrectos.';
+  if (/password.*(least|6|characters)/i.test(msg)) return 'La contraseña debe tener al menos 6 caracteres.';
+  if (/failed to fetch|networkerror|network request failed/i.test(msg)) return 'No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.';
+  if (/permission denied/i.test(msg)) return 'No tienes permiso para hacer esto (permission denied). Avisa a Rober.';
+  return msg || 'Ha ocurrido un error inesperado.';
+}
+
+// ---------------------------------------------------------------------------
+// Arranque / sesión
+// ---------------------------------------------------------------------------
+async function boot() {
+  const { data } = await sb.auth.getSession();
+  await onSession(data.session);
+  sb.auth.onAuthStateChange((_event, session) => { onSession(session); });
+}
+
+async function onSession(session) {
+  if (!session) {
+    state.user = null; state.profile = null; state.community = null;
+    showV('auth');
+    return;
+  }
+  state.user = session.user;
+  try {
+    const { data: profile, error } = await sb.from('profiles').select('*').eq('id', state.user.id).maybeSingle();
+    if (error) throw error;
+    state.profile = profile;
+    if (!profile) { showV('onboarding'); return; }
+    const { data: community } = await sb.from('communities').select('*').eq('id', profile.community_id).maybeSingle();
+    state.community = community || null;
+    showV('home');
+  } catch (err) {
+    console.error(err);
+    showV('onboarding');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Auth: login / signup
+// ---------------------------------------------------------------------------
+function updateAuthUi() {
+  const isSignup = state.authMode === 'signup';
+  document.getElementById('auth-submit-btn').textContent = isSignup ? 'Crear cuenta' : 'Entrar';
+  document.getElementById('auth-toggle-text').textContent = isSignup ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
+  document.getElementById('auth-toggle-btn').textContent = isSignup ? 'Entrar' : 'Crear cuenta';
+}
+document.getElementById('auth-toggle-btn').addEventListener('click', () => {
+  state.authMode = state.authMode === 'signup' ? 'signin' : 'signup';
+  showError('auth-error', null);
+  updateAuthUi();
+});
+document.getElementById('auth-submit-btn').addEventListener('click', async () => {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  showError('auth-error', null);
+  if (!email || !password) { showError('auth-error', 'Escribe tu email y tu contraseña.'); return; }
+  const btn = document.getElementById('auth-submit-btn');
+  btn.disabled = true;
+  try {
+    if (state.authMode === 'signup') {
+      const { data, error } = await sb.auth.signUp({ email, password });
+      if (error) throw error;
+      if (!data.session) { showV('confirm-email'); return; }
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    }
+  } catch (err) {
+    showError('auth-error', traducirError(err));
+  } finally {
+    btn.disabled = false;
+  }
+});
+document.getElementById('confirm-email-back-btn').addEventListener('click', () => showV('auth'));
+updateAuthUi();
+
+// ---------------------------------------------------------------------------
+// Onboarding: nombre + código de invitación
+// ---------------------------------------------------------------------------
+document.getElementById('onb-submit-btn').addEventListener('click', async () => {
+  const name = document.getElementById('onb-name').value.trim();
+  const code = document.getElementById('onb-code').value.trim().toUpperCase();
+  showError('onboarding-error', null);
+  if (!name) { showError('onboarding-error', 'Escribe tu nombre.'); return; }
+  if (!code) { showError('onboarding-error', 'Escribe el código de invitación.'); return; }
+  const btn = document.getElementById('onb-submit-btn');
+  btn.disabled = true;
+  try {
+    const { data: community, error: cErr } = await sb.from('communities').select('*').eq('invite_code', code).maybeSingle();
+    if (cErr) throw cErr;
+    if (!community) { showError('onboarding-error', 'Ese código no corresponde a ninguna comunidad. Revísalo con quien te lo dio.'); return; }
+    const { data: profile, error: pErr } = await sb.from('profiles')
+      .insert({ id: state.user.id, name, community_id: community.id })
+      .select('*').single();
+    if (pErr) throw pErr;
+    state.profile = profile;
+    state.community = community;
+    showV('home');
+  } catch (err) {
+    showError('onboarding-error', traducirError(err));
+  } finally {
+    btn.disabled = false;
+  }
+});
+document.getElementById('onb-logout-btn').addEventListener('click', async () => { await sb.auth.signOut(); });
+
+// ---------------------------------------------------------------------------
+// Home
+// ---------------------------------------------------------------------------
+async function renderHome() {
+  if (!state.profile || !state.community) return;
+  document.getElementById('home-avatar').innerHTML = avatarHtml(state.profile.name, state.profile.avatar_color, 34);
+  document.getElementById('home-community-icon').textContent = state.community.icon || '🏘️';
+  document.getElementById('home-community-name').textContent = state.community.name;
+  document.getElementById('home-community-count').textContent = '';
+
+  sb.from('profiles').select('id', { count: 'exact', head: true }).eq('community_id', state.community.id)
+    .then(({ count }) => {
+      document.getElementById('home-community-count').textContent = (count || 1) + (count === 1 ? ' persona en esta comunidad' : ' personas en esta comunidad');
+    });
+
+  try {
+    const [asDriver, asPassenger, myTrips] = await Promise.all([
+      fetchMatchesAsDriver(),
+      fetchMatchesAsPassenger(),
+      fetchMyTrips(),
+    ]);
+    const allMatches = asDriver.concat(asPassenger);
+    const nuevas = allMatches.filter((m) => m.status === 'new').length;
+    document.getElementById('home-matches-title').textContent = allMatches.length ? 'Ver mis coincidencias' : 'Aún no tienes coincidencias';
+    document.getElementById('home-matches-sub').textContent = nuevas > 0 ? `${nuevas} nueva${nuevas === 1 ? '' : 's'} esperando respuesta` : (allMatches.length ? 'Todo al día' : 'Publica tu trayecto para empezar');
+
+    const tripsEl = document.getElementById('home-my-trips');
+    if (!myTrips.length) {
+      tripsEl.innerHTML = '<div class="empty-state"><span class="glyph">🚗</span>Todavía no has metido ningún trayecto.</div>';
+    } else {
+      tripsEl.innerHTML = myTrips.map((t) => tripSummaryCard(t)).join('');
+    }
+  } catch (err) {
+    console.error('renderHome', err);
+  }
+}
+document.getElementById('home-empezar-btn').addEventListener('click', () => showV('publish'));
+document.getElementById('home-matches-summary').addEventListener('click', () => showV('matches'));
+
+function tripSummaryCard(t) {
+  return `<div class="card" style="margin-bottom:10px;">
+    <div style="font-weight:700; font-size:14px;">🚗 ${escapeHtml(t.origin_label)} → ${escapeHtml(t.dest_label)}</div>
+    <div class="muted" style="margin-top:4px;">Sale a las ${String(t.depart_time).slice(0,5)} · ${(t.days||[]).join(', ')} · ${t.seats_left} plaza(s) libres</div>
+  </div>`;
+}
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// ---------------------------------------------------------------------------
+// Publicar trayecto (coche o pasajero, en un solo paso)
+// ---------------------------------------------------------------------------
+function renderPublishForm() {
+  document.getElementById('publish-community-sub').textContent = 'en ' + (state.community ? state.community.name : '');
+  showError('publish-error', null);
+
+  const datalist = document.getElementById('places-list');
+  datalist.innerHTML = Object.values(PLACES).map((p) => `<option value="${escapeHtml(p.name)}"></option>`).join('');
+
+  setPublishRole('driver');
+  document.getElementById('pub-origin').value = '';
+  document.getElementById('pub-dest').value = '';
+  document.getElementById('pub-time').value = '08:00';
+  state.publishDays = ['L', 'M', 'X', 'J', 'V'];
+  document.querySelectorAll('#pub-days .daychip').forEach((c) => c.classList.toggle('selected', state.publishDays.includes(c.dataset.day)));
+  state.publishSeats = 3;
+  document.getElementById('pub-seats-val').textContent = '3';
+}
+
+function setPublishRole(role) {
+  state.publishRole = role;
+  document.getElementById('role-driver').classList.toggle('selected', role === 'driver');
+  document.getElementById('role-passenger').classList.toggle('selected', role === 'passenger');
+  document.getElementById('pub-seats-field').classList.toggle('hidden', role !== 'driver');
+}
+document.getElementById('role-driver').addEventListener('click', () => setPublishRole('driver'));
+document.getElementById('role-passenger').addEventListener('click', () => setPublishRole('passenger'));
+
+document.querySelectorAll('#pub-days .daychip').forEach((chip) => {
+  chip.addEventListener('click', () => {
+    const d = chip.dataset.day;
+    if (state.publishDays.includes(d)) state.publishDays = state.publishDays.filter((x) => x !== d);
+    else state.publishDays.push(d);
+    chip.classList.toggle('selected');
+  });
+});
+document.getElementById('pub-seats-minus').addEventListener('click', () => {
+  state.publishSeats = Math.max(1, state.publishSeats - 1);
+  document.getElementById('pub-seats-val').textContent = state.publishSeats;
+});
+document.getElementById('pub-seats-plus').addEventListener('click', () => {
+  state.publishSeats = Math.min(6, state.publishSeats + 1);
+  document.getElementById('pub-seats-val').textContent = state.publishSeats;
+});
+
+document.getElementById('pub-submit-btn').addEventListener('click', async () => {
+  showError('publish-error', null);
+  const originKey = resolvePlaceKey(document.getElementById('pub-origin').value);
+  const destKey = resolvePlaceKey(document.getElementById('pub-dest').value);
+  const time = document.getElementById('pub-time').value || '08:00';
+  if (!originKey || !destKey) {
+    showError('publish-error', 'Elige un origen y un destino de la lista (empieza a escribir y elige una opción).');
+    return;
+  }
+  const origin = PLACES[originKey];
+  const destination = PLACES[destKey];
+  const btn = document.getElementById('pub-submit-btn');
+  btn.disabled = true;
+  try {
+    if (state.publishRole === 'driver') {
+      await publishAsDriver(origin, destination, time);
+    } else {
+      await publishAsPassenger(origin, destination, time);
+    }
+    showV('matches');
+  } catch (err) {
+    console.error(err);
+    showError('publish-error', traducirError(err));
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+async function publishAsDriver(origin, destination, time) {
+  const { data: trip, error } = await sb.from('trips').insert({
+    driver_id: state.user.id,
+    community_id: state.community.id,
+    origin_lat: origin.lat, origin_lng: origin.lng, origin_label: origin.name,
+    dest_lat: destination.lat, dest_lng: destination.lng, dest_label: destination.name,
+    depart_time: time, days: state.publishDays, seats: state.publishSeats, seats_left: state.publishSeats,
+    recurring: true, cost_share: false,
+  }).select('*').single();
+  if (error) throw error;
+
+  // Comprueba si algún pasajero ya está buscando algo compatible con este trayecto.
+  const { data: searches, error: sErr } = await sb.from('searches').select('*').eq('community_id', state.community.id);
+  if (sErr) throw sErr;
+  const driverTrip = { origin, destination, time, days: state.publishDays, communityId: state.community.id };
+  for (const s of (searches || [])) {
+    if (s.passenger_id === state.user.id) continue;
+    const passengerTrip = {
+      origin: { lat: s.origin_lat, lng: s.origin_lng }, destination: { lat: s.dest_lat, lng: s.dest_lng },
+      time: s.wanted_time, days: s.days, communityId: state.community.id,
+    };
+    const m = calculateMatch(passengerTrip, driverTrip);
+    if (m.score >= MIN_MATCH_SCORE) {
+      await getOrCreateMatch(trip.id, s.passenger_id, m.score, m.detourMinutes);
+    }
+  }
+}
+
+async function publishAsPassenger(origin, destination, time) {
+  const { data: search, error } = await sb.from('searches').insert({
+    passenger_id: state.user.id,
+    community_id: state.community.id,
+    origin_lat: origin.lat, origin_lng: origin.lng, origin_label: origin.name,
+    dest_lat: destination.lat, dest_lng: destination.lng, dest_label: destination.name,
+    wanted_time: time, days: state.publishDays, flex_min: 30,
+  }).select('*').single();
+  if (error) throw error;
+
+  const { data: trips, error: tErr } = await sb.from('trips').select('*').eq('community_id', state.community.id).eq('status', 'active');
+  if (tErr) throw tErr;
+  const passengerTrip = { origin, destination, time, days: state.publishDays, communityId: state.community.id };
+  for (const t of (trips || [])) {
+    if (t.driver_id === state.user.id) continue;
+    const driverTrip = {
+      origin: { lat: t.origin_lat, lng: t.origin_lng }, destination: { lat: t.dest_lat, lng: t.dest_lng },
+      time: String(t.depart_time).slice(0, 5), days: t.days, communityId: state.community.id,
+    };
+    const m = calculateMatch(passengerTrip, driverTrip);
+    if (m.score >= MIN_MATCH_SCORE) {
+      await getOrCreateMatch(t.id, state.user.id, m.score, m.detourMinutes);
+    }
+  }
+}
+
+async function getOrCreateMatch(tripId, passengerId, score, detourMinutes) {
+  const existing = await sb.from('match_interactions').select('*').eq('trip_id', tripId).eq('passenger_id', passengerId).maybeSingle();
+  if (existing.data) return existing.data;
+  const { data, error } = await sb.from('match_interactions')
+    .insert({ trip_id: tripId, passenger_id: passengerId, score, detour_minutes: detourMinutes })
+    .select('*').single();
+  if (error) throw error;
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Mis trayectos
+// ---------------------------------------------------------------------------
+async function fetchMyTrips() {
+  const { data, error } = await sb.from('trips').select('*').eq('driver_id', state.user.id).order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+async function fetchMySearches() {
+  const { data, error } = await sb.from('searches').select('*').eq('passenger_id', state.user.id).order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+async function renderTrips() {
+  const el = document.getElementById('trips-list');
+  el.innerHTML = '<p class="muted">Cargando…</p>';
+  try {
+    const [trips, searches] = await Promise.all([fetchMyTrips(), fetchMySearches()]);
+    if (!trips.length && !searches.length) {
+      el.innerHTML = '<div class="empty-state"><span class="glyph">🚗</span>Todavía no has metido ningún trayecto.</div>';
+      return;
+    }
+    let html = '';
+    if (trips.length) {
+      html += '<div style="font-family:\'Fraunces\',serif; font-weight:600; margin-bottom:10px;">Como conductor</div>';
+      html += trips.map((t) => tripSummaryCard(t)).join('');
+    }
+    if (searches.length) {
+      html += '<div style="font-family:\'Fraunces\',serif; font-weight:600; margin:16px 0 10px;">Como pasajero</div>';
+      html += searches.map((s) => `<div class="card" style="margin-bottom:10px;">
+        <div style="font-weight:700; font-size:14px;">🙋 ${escapeHtml(s.origin_label)} → ${escapeHtml(s.dest_label)}</div>
+        <div class="muted" style="margin-top:4px;">Sobre las ${String(s.wanted_time).slice(0,5)} · ${(s.days||[]).join(', ')}</div>
+      </div>`).join('');
+    }
+    el.innerHTML = html;
+  } catch (err) {
+    el.innerHTML = `<div class="error-box">${escapeHtml(traducirError(err))}</div>`;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Coincidencias
+// ---------------------------------------------------------------------------
+async function fetchMatchesAsDriver() {
+  const trips = await fetchMyTrips();
+  if (!trips.length) return [];
+  const { data, error } = await sb.from('match_interactions').select('*').in('trip_id', trips.map((t) => t.id)).order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map((m) => ({ ...m, _trip: trips.find((t) => t.id === m.trip_id), _role: 'driver' }));
+}
+async function fetchMatchesAsPassenger() {
+  const { data, error } = await sb.from('match_interactions').select('*, trip:trips(*)').eq('passenger_id', state.user.id).order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map((m) => ({ ...m, _trip: m.trip, _role: 'passenger' }));
+}
+async function profileById(id) {
+  const { data } = await sb.from('profiles').select('*').eq('id', id).maybeSingle();
+  return data;
+}
+
+async function renderMatches() {
+  const el = document.getElementById('matches-list');
+  el.innerHTML = '<p class="muted">Cargando…</p>';
+  try {
+    const [asDriver, asPassenger] = await Promise.all([fetchMatchesAsDriver(), fetchMatchesAsPassenger()]);
+    const all = asDriver.concat(asPassenger).sort((a, b) => b.score - a.score);
+    if (!all.length) {
+      el.innerHTML = '<div class="empty-state"><span class="glyph">🤝</span>Todavía no tienes coincidencias.<br>Publica tu trayecto para empezar.</div>';
+      return;
+    }
+    const cards = await Promise.all(all.map(async (m) => {
+      const otherId = m._role === 'driver' ? m.passenger_id : (m._trip ? m._trip.driver_id : null);
+      const other = otherId ? await profileById(otherId) : null;
+      const trip = m._trip;
+      return `<div class="match-card" data-match="${m.id}">
+        <div class="match-top">
+          ${avatarHtml(other ? other.name : '?', other ? other.avatar_color : null, 48)}
+          <div style="flex:1; min-width:0;">
+            <strong>${escapeHtml(other ? other.name : 'Usuario')}</strong>
+            <div class="muted" style="font-size:12px;">${m._role === 'driver' ? 'Quiere ir contigo' : 'Conductor/a'}</div>
+          </div>
+          <div class="compat-badge"><div class="compat-num">${m.score}%</div><div class="compat-label">compatible</div></div>
+        </div>
+        <div class="match-progress"><span style="width:${m.score}%;"></span></div>
+        <div class="match-meta">
+          <div>${matchLabel(m.score)}</div>
+          ${trip ? `<div>🚗 ${escapeHtml(trip.origin_label)} → ${escapeHtml(trip.dest_label)} · Sale ${String(trip.depart_time).slice(0,5)}</div>` : ''}
+          <div>${m.detour_minutes === 0 ? '✓ Sin desviación' : `+${m.detour_minutes} min de desviación`}</div>
+        </div>
+        <button class="btn btn-dark btn-sm" data-open-chat="${m.id}">Hablar</button>
+      </div>`;
+    }));
+    el.innerHTML = cards.join('');
+    el.querySelectorAll('[data-open-chat]').forEach((btn) => {
+      btn.addEventListener('click', () => openChat(btn.dataset.openChat));
+    });
+  } catch (err) {
+    el.innerHTML = `<div class="error-box">${escapeHtml(traducirError(err))}</div>`;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Chat
+// ---------------------------------------------------------------------------
+async function openChat(matchId) {
+  state.activeChatMatch = matchId;
+  showV('chat');
+  const el = document.getElementById('chat-messages');
+  el.innerHTML = '<p class="muted">Cargando…</p>';
+  try {
+    const { data: match, error } = await sb.from('match_interactions').select('*, trip:trips(*)').eq('id', matchId).maybeSingle();
+    if (error) throw error;
+    const otherId = match.passenger_id === state.user.id ? match.trip.driver_id : match.passenger_id;
+    const other = await profileById(otherId);
+    document.getElementById('chat-header-info').innerHTML = `<div>
+      <div style="font-weight:700; font-size:15px;">${escapeHtml(other ? other.name : 'Usuario')}</div>
+      <div class="muted" style="font-size:12px;">${match.trip ? escapeHtml(match.trip.origin_label) + ' → ' + escapeHtml(match.trip.dest_label) : ''}</div>
+    </div>`;
+    await loadChatMessages(matchId);
+    if (state.chatChannel) sb.removeChannel(state.chatChannel);
+    state.chatChannel = sb.channel('chat-' + matchId)
+      .on('postgres_changes', { event: 'INSERT', schema: 'comunidad', table: 'chat_messages', filter: 'match_id=eq.' + matchId }, () => loadChatMessages(matchId))
+      .subscribe();
+  } catch (err) {
+    el.innerHTML = `<div class="error-box">${escapeHtml(traducirError(err))}</div>`;
+  }
+}
+async function loadChatMessages(matchId) {
+  const { data, error } = await sb.from('chat_messages').select('*').eq('match_id', matchId).order('created_at', { ascending: true });
+  if (error) { console.error(error); return; }
+  const el = document.getElementById('chat-messages');
+  el.innerHTML = (data || []).map((m) => `<div class="bubble ${m.sender_id === state.user.id ? 'me' : 'them'}">${escapeHtml(m.text)}</div>`).join('') || '<p class="muted" style="text-align:center;">Aún no hay mensajes. ¡Saluda!</p>';
+  el.scrollTop = el.scrollHeight;
+}
+document.getElementById('chat-send-btn').addEventListener('click', sendChatMessage);
+document.getElementById('chat-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChatMessage(); });
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || !state.activeChatMatch) return;
+  input.value = '';
+  try {
+    const { error } = await sb.from('chat_messages').insert({ match_id: state.activeChatMatch, sender_id: state.user.id, text });
+    if (error) throw error;
+    await loadChatMessages(state.activeChatMatch);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Perfil
+// ---------------------------------------------------------------------------
+function renderProfile() {
+  const p = state.profile;
+  const el = document.getElementById('profile-content');
+  el.innerHTML = `
+    <div style="display:flex; flex-direction:column; align-items:center; padding:10px 0 24px;">
+      ${avatarHtml(p.name, p.avatar_color, 72)}
+      <h2 style="margin-top:14px; font-size:19px;">${escapeHtml(p.name)}</h2>
+      <div class="muted" style="margin-top:4px;">${escapeHtml(state.user.email)}</div>
+      <div class="chip" style="margin-top:10px;">${state.community ? state.community.icon + ' ' + escapeHtml(state.community.name) : ''}</div>
+    </div>
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span class="muted">Valoración</span><strong>${Number(p.rating).toFixed(1)} ★</strong></div>
+      <div style="display:flex; justify-content:space-between;"><span class="muted">Viajes compartidos</span><strong>${p.trips_count}</strong></div>
+    </div>
+    <button class="btn btn-secondary" id="profile-logout-btn">Cerrar sesión</button>
+  `;
+  document.getElementById('profile-logout-btn').addEventListener('click', async () => { await sb.auth.signOut(); });
+}
+
+// ---------------------------------------------------------------------------
+boot();
+
+</script>
+</body>
+</html>
