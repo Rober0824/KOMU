@@ -574,10 +574,12 @@ document.getElementById('onb-submit-btn').addEventListener('click', async () => 
     const { data: community, error: cErr } = await sb.from('communities').select('*').eq('invite_code', code).maybeSingle();
     if (cErr) throw cErr;
     if (!community) { showError('onboarding-error', 'Ese código no corresponde a ninguna comunidad. Revísalo con quien te lo dio.'); return; }
-    const { data: profile, error: pErr } = await sb.from('profiles')
-      .insert({ id: state.user.id, name, community_id: community.id })
-      .select('*').single();
+    const { error: pErr } = await sb.from('profiles')
+      .insert({ id: state.user.id, name, community_id: community.id });
     if (pErr) throw pErr;
+    const { data: profile, error: pErr2 } = await sb.from('profiles')
+      .select('*').eq('id', state.user.id).single();
+    if (pErr2) throw pErr2;
     state.profile = profile;
     state.community = community;
     hideJoinModal();
@@ -724,15 +726,19 @@ document.getElementById('pub-submit-btn').addEventListener('click', async () => 
 });
 
 async function publishAsDriver(origin, destination, time) {
-  const { data: trip, error } = await sb.from('trips').insert({
+  const { error } = await sb.from('trips').insert({
     driver_id: state.user.id,
     community_id: state.community.id,
     origin_lat: origin.lat, origin_lng: origin.lng, origin_label: origin.name,
     dest_lat: destination.lat, dest_lng: destination.lng, dest_label: destination.name,
     depart_time: time, days: state.publishDays, seats: state.publishSeats, seats_left: state.publishSeats,
     recurring: true, cost_share: false,
-  }).select('*').single();
+  });
   if (error) throw error;
+  const { data: trip, error: tripFetchErr } = await sb.from('trips')
+    .select('*').eq('driver_id', state.user.id).eq('community_id', state.community.id)
+    .order('created_at', { ascending: false }).limit(1).single();
+  if (tripFetchErr) throw tripFetchErr;
 
   // Comprueba si algún pasajero ya está buscando algo compatible con este trayecto.
   const { data: searches, error: sErr } = await sb.from('searches').select('*').eq('community_id', state.community.id);
@@ -752,13 +758,13 @@ async function publishAsDriver(origin, destination, time) {
 }
 
 async function publishAsPassenger(origin, destination, time) {
-  const { data: search, error } = await sb.from('searches').insert({
+  const { error } = await sb.from('searches').insert({
     passenger_id: state.user.id,
     community_id: state.community.id,
     origin_lat: origin.lat, origin_lng: origin.lng, origin_label: origin.name,
     dest_lat: destination.lat, dest_lng: destination.lng, dest_label: destination.name,
     wanted_time: time, days: state.publishDays, flex_min: 30,
-  }).select('*').single();
+  });
   if (error) throw error;
 
   const { data: trips, error: tErr } = await sb.from('trips').select('*').eq('community_id', state.community.id).eq('status', 'active');
@@ -780,10 +786,12 @@ async function publishAsPassenger(origin, destination, time) {
 async function getOrCreateMatch(tripId, passengerId, score, detourMinutes) {
   const existing = await sb.from('match_interactions').select('*').eq('trip_id', tripId).eq('passenger_id', passengerId).maybeSingle();
   if (existing.data) return existing.data;
-  const { data, error } = await sb.from('match_interactions')
-    .insert({ trip_id: tripId, passenger_id: passengerId, score, detour_minutes: detourMinutes })
-    .select('*').single();
+  const { error } = await sb.from('match_interactions')
+    .insert({ trip_id: tripId, passenger_id: passengerId, score, detour_minutes: detourMinutes });
   if (error) throw error;
+  const { data, error: fetchErr } = await sb.from('match_interactions')
+    .select('*').eq('trip_id', tripId).eq('passenger_id', passengerId).maybeSingle();
+  if (fetchErr) throw fetchErr;
   return data;
 }
 
