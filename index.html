@@ -101,6 +101,9 @@
   .link-btn{background:none; border:none; color:var(--pine); font-weight:600; font-size:13px; padding:0; cursor:pointer;}
   .muted{color:var(--ink-faint); font-size:13px; line-height:1.5;}
   .hidden{display:none !important;}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(18,25,21,0.55); display:flex; align-items:center; justify-content:center; z-index:200; padding:20px;}
+  .modal-card{background:#fff; border-radius:20px; padding:30px 24px; max-width:340px; width:100%; text-align:center; max-height:90vh; overflow-y:auto;}
 </style>
 </head>
 <body>
@@ -149,30 +152,6 @@
       <h2 style="font-size:19px; margin-bottom:10px;">Revisa tu correo</h2>
       <p class="muted">Te hemos enviado un enlace de confirmación. Ábrelo y vuelve aquí para entrar.</p>
       <button class="btn btn-secondary" style="margin-top:24px; max-width:200px;" id="confirm-email-back-btn">Volver</button>
-    </div>
-  </div>
-
-  <!-- ============ ONBOARDING: nombre + código ============ -->
-  <div class="view" id="view-onboarding">
-    <div class="screen" style="text-align:center; padding-top:50px;">
-      <img src="icon-192.png" style="width:60px; height:60px; border-radius:14px; margin-bottom:18px;">
-      <h1 style="font-size:22px; margin-bottom:10px;">Únete a tu comunidad</h1>
-      <p class="muted" style="max-width:300px; margin:0 auto 26px;">Pide el código de invitación a tu urbanización, tu empresa o tu colegio, y escríbelo aquí.</p>
-
-      <div id="onboarding-error" class="error-box hidden" style="text-align:left;"></div>
-
-      <div class="field" style="text-align:left;">
-        <label>Tu nombre</label>
-        <input type="text" id="onb-name" placeholder="Nombre y apellido">
-      </div>
-      <div class="field" style="text-align:left;">
-        <label>Código de invitación</label>
-        <input type="text" id="onb-code" placeholder="ABC-123" style="text-align:center; font-family:'Fraunces',serif; font-size:20px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;">
-      </div>
-
-      <button class="btn btn-dark" id="onb-submit-btn" style="margin-top:6px;">Unirme</button>
-      <p class="muted" style="margin-top:20px; font-size:12px;">Cada comunidad tiene su propio código — así solo entra quien de verdad pertenece a ella.</p>
-      <button class="link-btn" style="margin-top:18px;" id="onb-logout-btn">Cerrar sesión</button>
     </div>
   </div>
 
@@ -313,6 +292,30 @@
     <button class="navitem" data-nav="profile"><span>👤</span><span>Perfil</span></button>
   </div>
 
+  <!-- ============ POP-UP: unirse a una comunidad con código ============ -->
+  <div class="modal-overlay hidden" id="join-modal">
+    <div class="modal-card" style="position:relative;">
+      <button id="join-modal-close" style="position:absolute; top:10px; right:10px; width:30px; height:30px; border-radius:50%; border:none; background:var(--cream); color:var(--ink-faint); font-size:16px; line-height:1;">✕</button>
+      <img src="icon-192.png" style="width:56px; height:56px; border-radius:14px; margin-bottom:16px;">
+      <h1 style="font-size:20px; margin-bottom:8px;">Únete a tu comunidad</h1>
+      <p class="muted" style="margin-bottom:22px;">Pide el código de invitación a tu urbanización, tu empresa o tu colegio, y escríbelo aquí.</p>
+
+      <div id="onboarding-error" class="error-box hidden" style="text-align:left;"></div>
+
+      <div class="field" style="text-align:left;">
+        <label>Tu nombre</label>
+        <input type="text" id="onb-name" placeholder="Nombre y apellido">
+      </div>
+      <div class="field" style="text-align:left;">
+        <label>Código de invitación</label>
+        <input type="text" id="onb-code" placeholder="ABC-123" style="text-align:center; font-family:'Fraunces',serif; font-size:20px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;">
+      </div>
+
+      <button class="btn btn-dark" id="onb-submit-btn" style="margin-top:6px;">Unirme</button>
+      <p class="muted" style="margin-top:18px; font-size:12px;">Cada comunidad tiene su propio código — así solo entra quien de verdad pertenece a ella.</p>
+    </div>
+  </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -446,7 +449,11 @@ function showV(name) {
 }
 
 document.querySelectorAll('[data-nav]').forEach((btn) => {
-  btn.addEventListener('click', () => showV(btn.dataset.nav));
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.nav;
+    if (!state.profile && target !== 'home') { showJoinModal(); return; }
+    showV(target);
+  });
 });
 
 function initials(name) {
@@ -482,9 +489,13 @@ async function boot() {
   sb.auth.onAuthStateChange((_event, session) => { onSession(session); });
 }
 
+function showJoinModal() { document.getElementById('join-modal').classList.remove('hidden'); }
+function hideJoinModal() { document.getElementById('join-modal').classList.add('hidden'); }
+
 async function onSession(session) {
   if (!session) {
     state.user = null; state.profile = null; state.community = null;
+    hideJoinModal();
     showV('auth');
     return;
   }
@@ -493,13 +504,13 @@ async function onSession(session) {
     const { data: profile, error } = await sb.from('profiles').select('*').eq('id', state.user.id).maybeSingle();
     if (error) throw error;
     state.profile = profile;
-    if (!profile) { showV('onboarding'); return; }
+    if (!profile) { showV('home'); return; }
     const { data: community } = await sb.from('communities').select('*').eq('id', profile.community_id).maybeSingle();
     state.community = community || null;
     showV('home');
   } catch (err) {
     console.error(err);
-    showV('onboarding');
+    showV('home');
   }
 }
 
@@ -563,20 +574,31 @@ document.getElementById('onb-submit-btn').addEventListener('click', async () => 
     if (pErr) throw pErr;
     state.profile = profile;
     state.community = community;
-    showV('home');
+    hideJoinModal();
+    renderHome();
   } catch (err) {
     showError('onboarding-error', traducirError(err));
   } finally {
     btn.disabled = false;
   }
 });
-document.getElementById('onb-logout-btn').addEventListener('click', async () => { await sb.auth.signOut(); });
+document.getElementById('join-modal-close').addEventListener('click', () => hideJoinModal());
 
 // ---------------------------------------------------------------------------
 // Home
 // ---------------------------------------------------------------------------
 async function renderHome() {
-  if (!state.profile || !state.community) return;
+  if (!state.profile || !state.community) {
+    document.getElementById('home-avatar').innerHTML = '';
+    document.getElementById('home-community-icon').textContent = '🔒';
+    document.getElementById('home-community-name').textContent = 'Aún no te has unido a una comunidad';
+    document.getElementById('home-community-count').textContent = '';
+    document.getElementById('home-matches-title').textContent = 'Ver mis coincidencias';
+    document.getElementById('home-matches-sub').textContent = 'Únete a una comunidad para empezar';
+    document.getElementById('home-my-trips').innerHTML = '';
+    showJoinModal();
+    return;
+  }
   document.getElementById('home-avatar').innerHTML = avatarHtml(state.profile.name, state.profile.avatar_color, 34);
   document.getElementById('home-community-icon').textContent = state.community.icon || '🏘️';
   document.getElementById('home-community-name').textContent = state.community.name;
@@ -608,8 +630,8 @@ async function renderHome() {
     console.error('renderHome', err);
   }
 }
-document.getElementById('home-empezar-btn').addEventListener('click', () => showV('publish'));
-document.getElementById('home-matches-summary').addEventListener('click', () => showV('matches'));
+document.getElementById('home-empezar-btn').addEventListener('click', () => { if (!state.profile) { showJoinModal(); return; } showV('publish'); });
+document.getElementById('home-matches-summary').addEventListener('click', () => { if (!state.profile) { showJoinModal(); return; } showV('matches'); });
 
 function tripSummaryCard(t) {
   return `<div class="card" style="margin-bottom:10px;">
