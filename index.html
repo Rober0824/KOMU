@@ -332,8 +332,14 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Un único cliente: db.schema afecta solo a las llamadas .from(...) (REST),
 // nunca a sb.auth.* (que siempre habla con el esquema interno "auth" de
 // Supabase sin importar esta opción).
+//
+// storageKey propio: KOMU y Box Score viven bajo el mismo dominio
+// (rober0824.github.io), así que el navegador guarda su sesión en el mismo
+// almacenamiento si no le decimos lo contrario — con esto, cada app tiene
+// su propio cajón y nunca se pisan la sesión la una a la otra.
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   db: { schema: 'comunidad' },
+  auth: { storageKey: 'komu-auth-token' },
 });
 
 // ---------------------------------------------------------------------------
